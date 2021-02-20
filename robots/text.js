@@ -1,17 +1,31 @@
 const algorithmia = require('algorithmia');
-const algorithmiaApiKey = require('../credentials/algorithmia.json').apiKey;
 const sentenceBoundaryDetection = require('sbd');
+
+const algorithmiaApiKey = require('../credentials/algorithmia.json').apiKey;
+const watsonApiKey = require('../credentials/watson-nlu.json').apikey;
+
+const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
+const { IamAuthenticator } = require('ibm-watson/auth');
+
+var nlu = new NaturalLanguageUnderstandingV1({
+    authenticator: new IamAuthenticator({ apikey: `${watsonApiKey}` }),
+    version: '2018-04-05',
+    serviceUrl: 'https://api.us-south.natural-language-understanding.watson.cloud.ibm.com'
+});
 
 async function robot(content) {
     await fetchContentFromWikipedia(content);
     sanitizedContent(content);
     breakContentIntoSentences(content);
+    limitMaximumSenteces(content);
+    await fetchKeywordsOfAllSentences(content);
+
 
     async function fetchContentFromWikipedia(content) {
         const algorithmiaAuthenticated = algorithmia(algorithmiaApiKey);
         const wikipediaAlgorithm = algorithmiaAuthenticated.algo('web/WikipediaParser/0.1.2');
-        const wikipediaRespond = await wikipediaAlgorithm.pipe(content.searchTerm);
-        const wikipediaContent = wikipediaRespond.get();
+        const wikipediaResponse = await wikipediaAlgorithm.pipe(content.searchTerm);
+        const wikipediaContent = wikipediaResponse.get();
 
         content.sourceContentOriginal = wikipediaContent.content;
     }
@@ -53,6 +67,36 @@ async function robot(content) {
             });
         });
         
+    }
+
+    async function fetchKeywordsOfAllSentences(content) {
+        for (const sentence of content.sentences) {
+            sentence.keywords = await fetchWatsonAndReturnKeywords(sentence.text);             
+        }
+    }
+
+    function limitMaximumSenteces(content) {
+        content.sentences = content.sentences.slice(0, content.maximumSentences);
+    }
+
+    async function fetchWatsonAndReturnKeywords(sentence) {
+        return new Promise((resolve, reject) => {      
+            nlu.analyze({
+                text: sentence,
+                features: {
+                    keywords: {}
+                }
+            }).then((response) => {
+                const keywords = response.result.keywords.map((keyword) => {
+                    return keyword.text;
+                });
+          
+                  resolve(keywords);
+              })
+              .catch(err => {
+                console.log('error: ', err);
+              });
+        });
     }
 }
 
