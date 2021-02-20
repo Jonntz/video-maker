@@ -7,19 +7,24 @@ const watsonApiKey = require('../credentials/watson-nlu.json').apikey;
 const NaturalLanguageUnderstandingV1 = require('ibm-watson/natural-language-understanding/v1');
 const { IamAuthenticator } = require('ibm-watson/auth');
 
-var nlu = new NaturalLanguageUnderstandingV1({
+const nlu = new NaturalLanguageUnderstandingV1({
     authenticator: new IamAuthenticator({ apikey: `${watsonApiKey}` }),
     version: '2018-04-05',
     serviceUrl: 'https://api.us-south.natural-language-understanding.watson.cloud.ibm.com'
 });
 
-async function robot(content) {
+const state = require('./state.js');
+
+async function robot() {
+    const content = state.load();
+
     await fetchContentFromWikipedia(content);
     sanitizedContent(content);
     breakContentIntoSentences(content);
     limitMaximumSenteces(content);
     await fetchKeywordsOfAllSentences(content);
 
+    state.save(content);
 
     async function fetchContentFromWikipedia(content) {
         const algorithmiaAuthenticated = algorithmia(algorithmiaApiKey);
@@ -47,7 +52,6 @@ async function robot(content) {
             });
 
             return withoutBlankLinesAndMarkdown.join(' ');
-        
         }
         
         function removeDatesInParenthesis(text) {
@@ -65,8 +69,7 @@ async function robot(content) {
                 keywords: [],
                 images: []
             });
-        });
-        
+        });      
     }
 
     async function fetchKeywordsOfAllSentences(content) {
@@ -93,7 +96,7 @@ async function robot(content) {
           
                   resolve(keywords);
               })
-              .catch(err => {
+              .catch((err) => {
                 console.log('error: ', err);
               });
         });
