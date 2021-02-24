@@ -1,4 +1,6 @@
 const gm = require('gm').subClass({imageMagick: true});
+const state = require('./state.js');
+
 
 async function robot() {
     const content = state.load();
@@ -94,22 +96,7 @@ async function robot() {
                 6: {
                 size: '1920x400',
                 gravity: 'center'
-                },
-
-                7: {
-                    size: '1920x1080',
-                    gravity: 'center'
-                },
-
-                8: {
-                    size: '800x1080',
-                    gravity: 'west'
-                },
-
-                9: {
-                    size: '1920x400',
-                    gravity: 'center'
-                },
+                }
             };
         
             gm()
