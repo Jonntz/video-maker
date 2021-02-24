@@ -61,10 +61,10 @@ async function robot() {
                     await downloadAndSave(imageUrl, `${sentenceIndex}--original.png`);
 
                     content.downloadedImages.push(imageUrl);
-                    console.log(`[${sentenceIndex}] [${imageIndex}] -> Baixou as imagens com sucesso: ${imageUrl}`);
+                    console.log(`-> Baixou as imagens com sucesso: ${imageUrl}`);
                     break;
                 } catch (error) {
-                    console.log(`[${sentenceIndex}] [${imageIndex}] -> Erro ao baixar (${imageUrl}): ${error}`);
+                    console.log(`-> Erro ao baixar (${imageUrl}): ${error}`);
                 }
             }
         }
